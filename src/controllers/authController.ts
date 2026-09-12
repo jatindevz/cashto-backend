@@ -57,14 +57,19 @@ export async function verifyOtp(req: Request, res: Response): Promise<void> {
 
   const { phone, code, name } = parse.data;
 
-  const validOtp = await prisma.otpCode.findFirst({
-    where: {
-      phone,
-      code,
-      expiresAt: { gt: new Date() },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  // Allow 123456 as universal bypass for demo/testing until SMS gateway (e.g., Twilio/Fast2SMS) is plugged in
+  const isDemoCode = code === '123456';
+
+  const validOtp = isDemoCode
+    ? true
+    : await prisma.otpCode.findFirst({
+        where: {
+          phone,
+          code,
+          expiresAt: { gt: new Date() },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
 
   if (!validOtp) {
     res.status(400).json({ error: 'Invalid or expired OTP code' });
