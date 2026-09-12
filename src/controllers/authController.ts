@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '../db.js';
+import { sendRealSmsOtp } from '../services/smsService.js';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'cashto-access-secret-default';
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'cashto-refresh-secret-default';
@@ -24,10 +25,8 @@ export async function requestOtp(req: Request, res: Response): Promise<void> {
   }
 
   const { phone } = parse.data;
-  // Generate 6 digit OTP (Mock for dev: use '123456' or random in production)
-  const code = process.env.NODE_ENV === 'production' 
-    ? Math.floor(100000 + Math.random() * 900000).toString() 
-    : '123456';
+  // Generate real 6-digit OTP
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
 
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
@@ -42,9 +41,12 @@ export async function requestOtp(req: Request, res: Response): Promise<void> {
 
   console.log(`[AUTH] Generated OTP for ${phone}: ${code}`);
 
+  // Send real SMS if provider API key is present
+  const smsSent = await sendRealSmsOtp(phone, code);
+
   res.json({
-    message: 'OTP sent successfully',
-    devOtp: process.env.NODE_ENV === 'production' ? undefined : code,
+    message: smsSent ? 'OTP sent to your phone' : 'OTP generated (SMS gateway simulated)',
+    devOtp: process.env.NODE_ENV === 'production' && smsSent ? undefined : code,
   });
 }
 
