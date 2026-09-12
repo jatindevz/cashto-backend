@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { requestOtp, verifyOtp, refreshToken, logout } from './controllers/authController.js';
@@ -15,7 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 // Health Check
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'cashto-backend', timestamp: new Date() });
 });
 
